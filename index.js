@@ -1,5 +1,5 @@
 // Library
-function createStore (reducer) {
+function createStore(reducer) {
   // the state
 
   // get the state
@@ -8,49 +8,70 @@ function createStore (reducer) {
 
   // Update the state
 
-  let state
-  let listeners = []
+  let state;
+  let listeners = [];
 
-  const getState = () => state
+  const getState = () => state;
 
-  const subscribe = (listener) => {
-    listeners.push(listener)
+  const subscribe = listener => {
+    listeners.push(listener);
     return () => {
-      listeners = listeners.filter((l) !== listener)
-    }
-  }
-  
-  const dispatch = (action) => {
-    state = reducer(state, action)
-    listeners.forEach((listener) => listener())
-  }
+      listeners = listeners.filter(l !== listener);
+    };
+  };
+
+  const dispatch = action => {
+    state = reducer(state, action);
+    listeners.forEach(listener => listener());
+  };
 
   return {
     getState,
     subscribe,
     dispatch
-  }
+  };
 }
 
 // App Code
 function todos (state = [], action) {
-  if(action.type === 'ADD_TODO') {
-    return state.concat([action.todo])
+  switch (action.type) {
+    case "ADD_TODO":
+      return state.concat([action.todo]);
+    case "REMOVE_TODO":
+      return state.filter(todo => todo.id !== action.id);
+    case "TOGGLE_TODO":
+      return state.map(todo =>
+        todo.id !== action.id
+          ? todo
+          : Object.assign({}, todo, { complete: !todo.complete })
+      );
+    default:
+      return state;
   }
-  return state
 }
 
-const store = createStore(todos)
+function goals (state = [], action){
+  switch(action.type) {
+    case 'ADD_GOAL' :
+      return state.concat([action.goal])
+    case 'REMOVE_GOAL' :
+      return state.filter((goal) => goal.id !== action.id)
+    default :
+      return state
+  }
+}
+
+const store = createStore(todos);
 
 store.subscribe(() => {
-  console.log('The new state is', store.getState())
-})
+  console.log("The new state is", store.getState());
+});
 
 store.dispatch({
-  type: 'ADD_TODO',
+  type: "ADD_TODO",
   todo: {
     id: 0,
-    name: 'Learn Redux',
+    name: "Learn Redux",
     complete: false
   }
-})
+});
