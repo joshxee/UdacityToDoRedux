@@ -4,6 +4,7 @@
     <title>
       Udacity Todos Goals
     </title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/3.7.2/redux.min.js"></script>
   </head>
   <body>
     <div>
@@ -23,32 +24,6 @@
         return `${Math.random()
           .toString(36)
           .substring(2)}${new Date().getTime().toString(36)}`;
-      }
-
-      // Library
-      function createStore(reducer) {
-        let state;
-        let listeners = [];
-
-        const getState = () => state;
-
-        const subscribe = listener => {
-          listeners.push(listener);
-          return () => {
-            listeners = listeners.filter(l !== listener);
-          };
-        };
-
-        const dispatch = action => {
-          state = reducer(state, action);
-          listeners.forEach(listener => listener());
-        };
-
-        return {
-          getState,
-          subscribe,
-          dispatch
-        };
       }
 
       // App Code
@@ -121,14 +96,46 @@
         }
       }
 
-      function app(state = {}, action) {
-        return {
-          todos: todos(state.todos, action),
-          goals: goals(state.goals, action)
-        };
+      const checker = (store) => (next) => (action) => {
+        if (
+              action.type === ADD_TODO &&
+              action.todo.name.toLowerCase().includes("bitcoin")
+            ) {
+              return alert("nope. That's a bad idea.");
+            }
+            if (
+              action.type === ADD_GOAL &&
+              action.goal.name.toLowerCase().includes("bitcoin")
+            ) {
+              return alert("nope. That's a bad idea.");
+            }
+
+            return next(action);
       }
 
-      const store = createStore(app);
+      const logger = (store) => (next) => (action) => {
+        console.group(action.type)
+          console.log('The action: ', action)
+          const result = next(action)
+          console.log('The new state: ', store.getState())
+        console.groupEnd()
+      }
+
+      const goalCongratulator = (store) => (next) => (action) => {
+        console.group(action.type)
+          console.log('The action: ', action)
+          const result = next(action)
+          console.log('The new state: ', store.getState())
+        console.groupEnd()
+      }
+
+
+      const store = Redux.createStore(
+        Redux.combineReducers({
+          todos,
+          goals
+        }), Redux.applyMiddleware(checker, logger)
+      );
 
       store.subscribe(() => {
         const { goals, todos } = store.getState();
@@ -183,8 +190,8 @@
         const node = document.createElement("li");
         const text = document.createTextNode(todo.name);
         const removeBtn = createRemoveButton(() => {
-          store.dispatch(removeTodoAction(todo.id))
-        })
+          store.dispatch(removeTodoAction(todo.id));
+        });
         node.appendChild(text);
         node.appendChild(removeBtn);
         node.style.textDecoration = todo.complete ? "line-through" : "none";
@@ -200,8 +207,8 @@
         const text = document.createTextNode(goal.name);
         node.appendChild(text);
         const removeBtn = createRemoveButton(() => {
-          store.dispatch(removeGoalAction(goal.id))
-        })
+          store.dispatch(removeGoalAction(goal.id));
+        });
         node.appendChild(removeBtn);
 
         document.getElementById("goals").appendChild(node);
